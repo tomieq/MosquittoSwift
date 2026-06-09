@@ -1,7 +1,7 @@
 import Foundation
 
 enum MQTTPacketCodec {
-    static func connectPacket(clientID: String, config: MosquittoConfig, keepAlive: UInt16) -> [UInt8] {
+    static func connectPacket(clientID: String, config: MqttConfig, keepAlive: UInt16) -> [UInt8] {
         var variableHeader: [UInt8] = []
         self.appendUTF8String("MQTT", to: &variableHeader)
         variableHeader.append(5)
@@ -27,7 +27,7 @@ enum MQTTPacketCodec {
         return self.fixedHeader(typeAndFlags: 0x10, remainingLength: variableHeader.count + payload.count) + variableHeader + payload
     }
 
-    static func publishPacket(_ message: MosquittoMessage) -> [UInt8] {
+    static func publishPacket(_ message: MqttMessage) -> [UInt8] {
         var variableHeader: [UInt8] = []
         self.appendUTF8String(message.topic, to: &variableHeader)
         variableHeader.append(0)
@@ -63,7 +63,7 @@ enum MQTTPacketCodec {
         guard reasonCode == 0 else { throw MQTTError.connectionRefused(reasonCode: reasonCode) }
     }
 
-    static func decodePublish(typeAndFlags: UInt8, body: [UInt8]) throws -> MosquittoMessage {
+    static func decodePublish(typeAndFlags: UInt8, body: [UInt8]) throws -> MqttMessage {
         var index = 0
         let topic = try readUTF8String(from: body, index: &index)
         let qos = (typeAndFlags & 0b0000_0110) >> 1
@@ -77,7 +77,7 @@ enum MQTTPacketCodec {
         guard index <= body.count else { throw MQTTError.invalidPacket }
         let payload = Data(body[index...])
         guard let text = String(data: payload, encoding: .utf8) else { throw MQTTError.malformedString }
-        return MosquittoMessage(topic: topic, message: text, retained: (typeAndFlags & 0x01) == 0x01)
+        return MqttMessage(topic: topic, message: text, retained: (typeAndFlags & 0x01) == 0x01)
     }
 
     private static func fixedHeader(typeAndFlags: UInt8, remainingLength: Int) -> [UInt8] {

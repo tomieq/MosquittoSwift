@@ -1,4 +1,4 @@
-@testable import MosquittoSwift
+@testable import MqttSwift
 import Foundation
 import Testing
 
@@ -6,14 +6,14 @@ import Testing
 struct IntegrationTests {
     @Test
     func connectsWithCredentials() async throws {
-        let client = MosquittoClient()
+        let client = MqttClient()
         try await client.connect(config: self.authenticatedConfig())
         await client.disconnect()
     }
 
     @Test
     func connectsAnonymously() async throws {
-        let client = MosquittoClient()
+        let client = MqttClient()
         try await client.connect(config: self.anonymousConfig())
         await client.disconnect()
     }
@@ -22,15 +22,15 @@ struct IntegrationTests {
     func subscriberReceivesPublishedMessage() async throws {
         let topic = "test/swift/\(UUID().uuidString)"
         let collector = MessageCollector()
-        let subscriber = MosquittoClient()
-        let publisher = MosquittoClient()
+        let subscriber = MqttClient()
+        let publisher = MqttClient()
 
         try await subscriber.connect(config: self.authenticatedConfig())
         try await subscriber.subscribe(to: "\(topic)/#") { message in
             collector.append(message)
         }
         try await publisher.connect(config: self.authenticatedConfig())
-        try await publisher.send(MosquittoMessage(topic: "\(topic)/one", message: "hello"))
+        try await publisher.send(MqttMessage(topic: "\(topic)/one", message: "hello"))
 
         let received = await waitForMessage(from: collector) { $0.topic == "\(topic)/one" }
         #expect(received?.message == "hello")
@@ -44,7 +44,7 @@ struct IntegrationTests {
         guard let containerName = ProcessInfo.processInfo.environment["MQTT_RECONNECT_CONTAINER"] else { return }
         let topic = "test/reconnect/\(UUID().uuidString)"
         let collector = MessageCollector()
-        let subscriber = MosquittoClient()
+        let subscriber = MqttClient()
 
         try await subscriber.connect(config: self.authenticatedConfig())
         try await subscriber.subscribe(to: "\(topic)/#") { message in
@@ -54,9 +54,9 @@ struct IntegrationTests {
         try restartContainer(named: containerName)
         try await Task.sleep(nanoseconds: 2_000_000_000)
 
-        let publisher = MosquittoClient()
+        let publisher = MqttClient()
         try await publisher.connect(config: self.authenticatedConfig())
-        try await publisher.send(MosquittoMessage(topic: "\(topic)/after-restart", message: "again"))
+        try await publisher.send(MqttMessage(topic: "\(topic)/after-restart", message: "again"))
 
         let received = await waitForMessage(from: collector) { $0.topic == "\(topic)/after-restart" }
         #expect(received?.message == "again")
@@ -65,16 +65,16 @@ struct IntegrationTests {
         await subscriber.disconnect()
     }
 
-    private func authenticatedConfig() -> MosquittoConfig {
-        MosquittoConfig(
+    private func authenticatedConfig() -> MqttConfig {
+        MqttConfig(
             host: self.testHost,
             port: 1883,
             auth: .credentials(username: "tomek", password: "coder")
         )
     }
 
-    private func anonymousConfig() -> MosquittoConfig {
-        MosquittoConfig(host: self.testHost, port: 1884, auth: .anonymous)
+    private func anonymousConfig() -> MqttConfig {
+        MqttConfig(host: self.testHost, port: 1884, auth: .anonymous)
     }
 
     private var testHost: String {
@@ -92,27 +92,27 @@ private func restartContainer(named containerName: String) throws {
 }
 
 private final class MessageCollector: @unchecked Sendable {
-    let stream: AsyncStream<MosquittoMessage>
-    private let continuation: AsyncStream<MosquittoMessage>.Continuation
+    let stream: AsyncStream<MqttMessage>
+    private let continuation: AsyncStream<MqttMessage>.Continuation
 
     init() {
-        var continuation: AsyncStream<MosquittoMessage>.Continuation?
+        var continuation: AsyncStream<MqttMessage>.Continuation?
         self.stream = AsyncStream { streamContinuation in
             continuation = streamContinuation
         }
         self.continuation = continuation!
     }
 
-    func append(_ message: MosquittoMessage) {
+    func append(_ message: MqttMessage) {
         self.continuation.yield(message)
     }
 }
 
 private func waitForMessage(
     from collector: MessageCollector,
-    matching predicate: @escaping @Sendable (MosquittoMessage) -> Bool
-) async -> MosquittoMessage? {
-    await withTaskGroup(of: MosquittoMessage?.self) { group in
+    matching predicate: @escaping @Sendable (MqttMessage) -> Bool
+) async -> MqttMessage? {
+    await withTaskGroup(of: MqttMessage?.self) { group in
         group.addTask {
             for await message in collector.stream where predicate(message) {
                 return message

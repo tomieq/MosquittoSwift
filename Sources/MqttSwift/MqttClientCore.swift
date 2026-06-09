@@ -1,19 +1,19 @@
 import Foundation
 
-actor MosquittoClientCore {
-    private let clientID = "MosquittoSwift-\(UUID().uuidString)"
+actor MqttClientCore {
+    private let clientID = "MqttSwift-\(UUID().uuidString)"
     private let keepAlive: UInt16 = 30
 
-    private var config: MosquittoConfig?
+    private var config: MqttConfig?
     private var transport: MQTTTransport?
     private var receiveTask: Task<Void, Never>?
     private var keepAliveTask: Task<Void, Never>?
     private var reconnectTask: Task<Void, Never>?
     private var manuallyDisconnected = false
     private var nextPacketID: UInt16 = 1
-    private var subscriptions: [String: [@Sendable (MosquittoMessage) -> Void]] = [:]
+    private var subscriptions: [String: [@Sendable (MqttMessage) -> Void]] = [:]
 
-    func connect(config: MosquittoConfig) throws {
+    func connect(config: MqttConfig) throws {
         self.config = config
         self.manuallyDisconnected = false
         self.reconnectTask?.cancel()
@@ -21,12 +21,12 @@ actor MosquittoClientCore {
         try self.establishConnection(resubscribe: true)
     }
 
-    func send(_ message: MosquittoMessage) throws {
+    func send(_ message: MqttMessage) throws {
         try self.ensureConnected()
         try self.transport?.write(MQTTPacketCodec.publishPacket(message))
     }
 
-    func subscribe(to topic: String, listener: @escaping @Sendable (MosquittoMessage) -> Void) throws {
+    func subscribe(to topic: String, listener: @escaping @Sendable (MqttMessage) -> Void) throws {
         self.subscriptions[topic, default: []].append(listener)
         try self.ensureConnected()
         try self.writeSubscribe(topic: topic)

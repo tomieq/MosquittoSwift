@@ -1,5 +1,5 @@
 
-public struct MosquittoConfig: Sendable {
+public struct MqttConfig: Sendable {
     public let host: String
     public let port: UInt16
     public let auth: Auth

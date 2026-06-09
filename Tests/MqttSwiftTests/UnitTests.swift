@@ -1,11 +1,11 @@
 import Testing
-@testable import MosquittoSwift
+@testable import MqttSwift
 
 struct UnitTests {
     @Test func connectPacketEncodesMQTT5Credentials() {
         let packet = MQTTPacketCodec.connectPacket(
             clientID: "client-one",
-            config: MosquittoConfig(host: "localhost", auth: .credentials(username: "tomek", password: "coder")),
+            config: MqttConfig(host: "localhost", auth: .credentials(username: "tomek", password: "coder")),
             keepAlive: 30
         )
 
@@ -16,7 +16,7 @@ struct UnitTests {
     }
 
     @Test func publishPacketRoundTripsTextPayload() throws {
-        let message = MosquittoMessage(topic: "test/one", message: "content", retained: true)
+        let message = MqttMessage(topic: "test/one", message: "content", retained: true)
         let packet = MQTTPacketCodec.publishPacket(message)
 
         #expect(packet[0] == 0x31)

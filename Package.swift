@@ -4,26 +4,26 @@
 import PackageDescription
 
 let package = Package(
-    name: "MosquittoSwift",
+    name: "MqttSwift",
     platforms: [
         .macOS(.v10_15)
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "MosquittoSwift",
-            targets: ["MosquittoSwift"]
+            name: "MqttSwift",
+            targets: ["MqttSwift"]
         )
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "MosquittoSwift"
+            name: "MqttSwift"
         ),
         .testTarget(
-            name: "MosquittoSwiftTests",
-            dependencies: ["MosquittoSwift"]
+            name: "MqttSwiftTests",
+            dependencies: ["MqttSwift"]
         )
     ]
 )
