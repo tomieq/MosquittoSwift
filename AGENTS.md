@@ -9,7 +9,9 @@ All new classes/structs/enums put in appropriate folder in separate file. Do not
 You have docker with images: 
 - MQTT broker: `eclipse-mosquitto:2.0.22`
 - Swift for Linux: `swift:6.1`
-- MQTT local client: `mosquitto_sub`
+Local tools:
+- MQTT local listener: `mosquitto_sub` (`mosquitto_sub -h localhost -u tomek -P coder -p 1883 -t "test/#" -F "%t %p"`)
+- MQTT local publisher: `mosquitto_pub` (`mosquitto_pub -h localhost -u tomek -P coder -p 1883 -t "test/one" -m "content"`)
 
 # Bulding project
 - Run `swift build` to build the project on local MacOS
