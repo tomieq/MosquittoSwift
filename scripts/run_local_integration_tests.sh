@@ -3,6 +3,8 @@ set -euo pipefail
 
 MQTT_CONTAINER=${MQTT_CONTAINER_NAME:-mosquitto}
 MQTT_IMAGE=${MQTT_DOCKER_IMAGE:-eclipse-mosquitto:2.0.22}
+MAX_ATTEMPTS=${MAX_ATTEMPTS:-30}
+TIMEOUT=${TIMEOUT:-1}
 HOST="localhost"
 
 cleanup() {
@@ -17,6 +19,7 @@ rm -rf mosquitto/log/mosquitto.log || true
 docker run -d \
   --name "$MQTT_CONTAINER" \
   -p 1883:1883 \
+  -p 1884:1884 \
   -p 9001:9001 \
   -v $(pwd)/mosquitto/config:/mosquitto/config \
   -v $(pwd)/mosquitto/data:/mosquitto/data \
@@ -38,5 +41,5 @@ while ! nc -z "$HOST" 1883 >/dev/null 2>&1; do
 done
 
 
-swift test --filter IntegrationTests "$@"
+MQTT_TEST_HOST=localhost MQTT_RECONNECT_CONTAINER="$MQTT_CONTAINER" swift test --filter IntegrationTests "$@"
 docker rm -f "$MQTT_CONTAINER" >/dev/null 2>&1 || true

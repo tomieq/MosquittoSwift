@@ -6,8 +6,11 @@ MQTT_CONTAINER=${MQTT_CONTAINER_NAME:-mosquitto}
 SWIFT_CONTAINER=${MQTT_SWIFT_CONTAINER_NAME:-mqtt-swift-test}
 MQTT_IMAGE=${MQTT_DOCKER_IMAGE:-eclipse-mosquitto:2.0.22}
 SWIFT_IMAGE=${SWIFT_DOCKER_IMAGE:-swift:6.1}
+MAX_ATTEMPTS=${MAX_ATTEMPTS:-30}
+TIMEOUT=${TIMEOUT:-1}
 HOST="localhost"
 
+echo "Run integrtation tests using $SWIFT_IMAGE"
 cleanup() {
   docker rm -f "$SWIFT_CONTAINER" "$MQTT_CONTAINER" >/dev/null 2>&1 || true
   docker network rm "$NETWORK" >/dev/null 2>&1 || true
@@ -24,6 +27,7 @@ docker run -d \
   --name "$MQTT_CONTAINER" \
   --network "$NETWORK" \
   -p 1883:1883 \
+  -p 1884:1884 \
   -p 9001:9001 \
   -v $(pwd)/mosquitto/config:/mosquitto/config \
   -v $(pwd)/mosquitto/data:/mosquitto/data \
@@ -47,6 +51,7 @@ done
 docker run --rm -t \
   --name "$SWIFT_CONTAINER" \
   --network "$NETWORK" \
+  -e MQTT_TEST_HOST="$MQTT_CONTAINER" \
   -v "$PWD":/workspace \
   -w /workspace \
   "$SWIFT_IMAGE" \
