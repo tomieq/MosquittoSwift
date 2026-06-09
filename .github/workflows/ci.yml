@@ -38,17 +38,26 @@ jobs:
 
       - name: Start Mosquitto broker
         run: |
-          docker run -d --name mosquitto --network mosq-net -p 1883:1883 \
+          docker run -d --name mosquitto --network mosq-net -p 1883:1883 -p 1884:1884 \
             -v "$GITHUB_WORKSPACE/mosquitto/config":/mosquitto/config \
             -v "$GITHUB_WORKSPACE/mosquitto/data":/mosquitto/data \
             -v "$GITHUB_WORKSPACE/mosquitto/log":/mosquitto/log \
             eclipse-mosquitto:2.0.22
-          # wait for broker to become ready
-          for i in {1..10}; do docker logs mosquitto && break || sleep 1; done
+          for i in {1..30}; do
+            if docker run --rm --network mosq-net busybox:1.36 sh -c "nc -z mosquitto 1883 && nc -z mosquitto 1884"; then
+              exit 0
+            fi
+
+            echo "Mosquitto is not ready yet... (Attempt $i/30)"
+            sleep 1
+          done
+
+          docker logs mosquitto
+          exit 1
 
       - name: Run integration tests in Swift Docker
         run: |
-          docker run --rm -v "$GITHUB_WORKSPACE":/workspace -w /workspace --network mosq-net swift:${{ matrix.swift }} sh -c "swift --version && swift test --filter IntegrationTests"
+          docker run --rm -v "$GITHUB_WORKSPACE":/workspace -w /workspace --network mosq-net -e MQTT_TEST_HOST=mosquitto swift:${{ matrix.swift }} sh -c "swift --version && swift test --filter IntegrationTests"
 
       - name: Cleanup broker
         if: always()
