@@ -12,12 +12,13 @@ cleanup() {
 
 cleanup
 trap cleanup EXIT
+rm -rf mosquitto/log/mosquitto.log || true
 
 docker run -d \
   --name "$MQTT_CONTAINER" \
   -p 1883:1883 \
   -p 9001:9001 \
-  -v $(pwd)/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf \
+  -v $(pwd)/mosquitto/config:/mosquitto/config \
   -v $(pwd)/mosquitto/data:/mosquitto/data \
   -v $(pwd)/mosquitto/log:/mosquitto/log \
   "$MQTT_IMAGE" >/dev/null

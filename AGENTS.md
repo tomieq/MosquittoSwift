@@ -29,12 +29,13 @@ docker run -d \
   --name mosquitto \
   -p 1883:1883 \
   -p 9001:9001 \
-  -v $(pwd)/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf \
+  -v $(pwd)/mosquitto/config:/mosquitto/config \
   -v $(pwd)/mosquitto/data:/mosquitto/data \
   -v $(pwd)/mosquitto/log:/mosquitto/log \
   eclipse-mosquitto:2.0.22
 ``` 
 Proper config file is already setup at `./mosquitto/config/mosquitto.conf`
+The authentication is setup for user tomek:coder
 
 # Change commit
 Never commit anything, let user review changes.
